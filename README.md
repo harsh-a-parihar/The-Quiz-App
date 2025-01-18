@@ -12,6 +12,7 @@
 `pip freeze > requirements.txt`
 
 ### Project structure
+`
 quiz_master_23f2000606/
 ├── mad1env/        # Virtual environment
 ├── static/         # CSS, JS, Images
@@ -24,5 +25,12 @@ quiz_master_23f2000606/
 ├── routes/         # Routes for admin and user
 ├── utils/          # Utility functions
 ├── requirements.txt
+`
 
+### Run the app
+`flask run`
+
+### Setup the database model
+
+### Connet Flask to SQLite db
 
