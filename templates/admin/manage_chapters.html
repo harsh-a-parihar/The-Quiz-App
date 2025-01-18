@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Chapters</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Manage Chapters for {{ subject.name }}</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Chapter Name:</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea name="description" class="form-control"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Chapter</button>
+        </form>
+        <hr>
+        <h3>All Chapters</h3>
+        <ul>
+            {% for chapter in chapters %}
+                <li>{{ chapter.name }} - {{ chapter.description }}</li>
+            {% endfor %}
+        </ul>
+        <a href="/admin/subjects" class="btn btn-secondary">Back to Subjects</a>
+    </div>
+</body>
+</html>

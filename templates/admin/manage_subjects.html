@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Subjects</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Manage Subjects</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="name">Subject Name:</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea name="description" class="form-control"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Subject</button>
+        </form>
+        <hr>
+        <h3>All Subjects</h3>
+        <ul>
+            {% for subject in subjects %}
+                <li>{{ subject.name }} - {{ subject.description }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>
