@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Questions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Manage Questions for Quiz</h2>
+
+        <!-- Form to Add a New Question -->
+        <form method="POST">
+            <div class="form-group">
+                <label for="question_statement">Question:</label>
+                <textarea name="question_statement" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="option1">Option 1:</label>
+                <input type="text" name="option1" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="option2">Option 2:</label>
+                <input type="text" name="option2" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="option3">Option 3:</label>
+                <input type="text" name="option3" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="option4">Option 4:</label>
+                <input type="text" name="option4" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="correct_option">Correct Option:</label>
+                <select name="correct_option" class="form-control" required>
+                    <option value="option1">Option 1</option>
+                    <option value="option2">Option 2</option>
+                    <option value="option3">Option 3</option>
+                    <option value="option4">Option 4</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Question</button>
+        </form>
+        <hr>
+
+        <!-- List of All Questions -->
+        <h3>All Questions</h3>
+        <ul>
+            {% for question in questions %}
+            <li>
+                <strong>{{ question.question_statement }}</strong>
+                <ul>
+                    <li>Option 1: {{ question.option1 }}</li>
+                    <li>Option 2: {{ question.option2 }}</li>
+                    <li>Option 3: {{ question.option3 }}</li>
+                    <li>Option 4: {{ question.option4 }}</li>
+                </ul>
+                <strong>Correct Answer:</strong> {{ question.correct_option }}
+                <br>
+                <a href="{{ url_for('admin.edit_question', question_id=question.id) }}" class="btn btn-sm btn-warning">Edit</a>
+                <form action="{{ url_for('admin.delete_question', question_id=question.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this question?');">
+                        Delete
+                    </button>
+                </form>
+                
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

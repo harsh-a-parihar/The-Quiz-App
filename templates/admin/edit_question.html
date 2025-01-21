@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Question</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Edit Question</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="question_statement">Question:</label>
+                <textarea name="question_statement" class="form-control" required>{{ question.question_statement }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="option1">Option 1:</label>
+                <input type="text" name="option1" class="form-control" value="{{ question.option1 }}" required>
+            </div>
+            <div class="form-group">
+                <label for="option2">Option 2:</label>
+                <input type="text" name="option2" class="form-control" value="{{ question.option2 }}" required>
+            </div>
+            <div class="form-group">
+                <label for="option3">Option 3:</label>
+                <input type="text" name="option3" class="form-control" value="{{ question.option3 }}" required>
+            </div>
+            <div class="form-group">
+                <label for="option4">Option 4:</label>
+                <input type="text" name="option4" class="form-control" value="{{ question.option4 }}" required>
+            </div>
+            <div class="form-group">
+                <label for="correct_option">Correct Option:</label>
+                <select name="correct_option" class="form-control" required>
+                    <option value="option1" {% if question.correct_option == 'option1' %}selected{% endif %}>Option 1</option>
+                    <option value="option2" {% if question.correct_option == 'option2' %}selected{% endif %}>Option 2</option>
+                    <option value="option3" {% if question.correct_option == 'option3' %}selected{% endif %}>Option 3</option>
+                    <option value="option4" {% if question.correct_option == 'option4' %}selected{% endif %}>Option 4</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('admin.manage_questions', quiz_id=question.quiz_id) }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subjects</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Subjects</h2>
+        <ul class="list-group">
+            {% for subject in subjects %}
+                <li class="list-group-item">
+                    <a href="{{ url_for('user.list_chapters', subject_id=subject.id) }}">{{ subject.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

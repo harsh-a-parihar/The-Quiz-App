@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chapters in {{ subject.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Chapters in {{ subject.name }}</h2>
+        <ul class="list-group">
+            {% for chapter in chapters %}
+                <li class="list-group-item">
+                    <a href="{{ url_for('user.list_quizzes', chapter_id=chapter.id) }}">{{ chapter.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('user.list_subjects') }}" class="btn btn-primary mt-3">Back to Subjects</a>
+    </div>
+</body>
+</html>

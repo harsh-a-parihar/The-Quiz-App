@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attempt Quiz</title>
+</head>
+<body>
+    <h1>{{ quiz.name }}</h1>
+    <form method="POST" action="{{ url_for('user.attempt_quiz', quiz_id=quiz.id) }}">
+        {% for question in questions %}
+            <div>
+                <h3>Question {{ loop.index }}: {{ question.question_statement }}</h3>
+                <div>
+                    <input type="radio" name="question_{{ question.id }}" value="option1" id="option_1_{{ question.id }}">
+                    <label for="option_1_{{ question.id }}">{{ question.option1 }}</label>                    
+                </div>
+                <div>
+                    <input type="radio" name="question_{{ question.id }}" value="option2" id="option_2_{{ question.id }}">
+                    <label for="option_2_{{ question.id }}">{{ question.option2 }}</label>
+                </div>
+                <div>
+                    <input type="radio" name="question_{{ question.id }}" value="option3" id="option_3_{{ question.id }}">
+                    <label for="option_3_{{ question.id }}">{{ question.option3 }}</label>
+                </div>
+                <div>
+                    <input type="radio" name="question_{{ question.id }}" value="option4" id="option_4_{{ question.id }}">
+                    <label for="option_4_{{ question.id }}">{{ question.option4 }}</label>
+                </div>
+            </div>
+            <hr>
+        {% endfor %}
+        <button type="submit">Submit Quiz</button>
+    </form>
+</body>
+</html>

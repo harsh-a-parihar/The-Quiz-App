@@ -2,12 +2,14 @@ from flask import Flask
 from sqlalchemy.exc import IntegrityError
 from extension import db
 from routes.admin_routes import admin
+from routes.user_routes import user
 
 app = Flask(__name__)
 app.secret_key = "something"
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///quiz_master.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.register_blueprint(admin, url_prefix='/admin')  # register the admin blueprint
+app.register_blueprint(user, url_prefix='/user')    # register the user blueprint
 
 db.init_app(app)    # bind the db to the app
 

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Questions</title>
+</head>
+<body>
+    <h1>{{ quiz.name }}</h1>
+    <p>Sorry, there are no questions available for this quiz at the moment.</p>
+    <a href="{{ url_for('user.list_quizzes', chapter_id=quiz.chapter_id) }}">Back to Quizzes</a>
+</body>
+</html>

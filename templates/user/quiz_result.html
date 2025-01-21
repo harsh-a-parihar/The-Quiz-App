@@ -1,0 +1,10 @@
+<h1>Quiz Results</h1>
+<p>Quiz: {{ quiz.name }}</p>
+<p>Score: {{ score }} / {{ total }}</p>
+<p>Percentage: {{ percentage }}%</p>
+{% if percentage >= 50 %}
+    <p>Congratulations, you passed!</p>
+{% else %}
+    <p>Better luck next time!</p>
+{% endif %}
+<a href="{{ url_for('user.list_quizzes', chapter_id=quiz.chapter_id) }}">Back to Quizzes</a>

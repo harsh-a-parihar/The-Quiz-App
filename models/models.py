@@ -14,7 +14,7 @@ class User(db.Model):
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text, nullable=True) 
 
 # Chapter Model
 class Chapter(db.Model):
@@ -32,6 +32,8 @@ class Quiz(db.Model):
     date_of_quiz = db.Column(db.Date, nullable=False)
     time_duration = db.Column(db.String(5), nullable=False)
     remark = db.Column(db.String(100), nullable=False)
+    # Relationship with Chapter
+    chapter = db.relationship('Chapter', backref=db.backref('quizzes', lazy=True))
 
 # Question Model
 class Question(db.Model):
@@ -43,6 +45,8 @@ class Question(db.Model):
     option3 = db.Column(db.String(100), nullable=False)
     option4 = db.Column(db.String(100), nullable=False)
     correct_option = db.Column(db.String(100), nullable=False)
+    # Relationship with Quiz
+    quiz = db.relationship('Quiz', backref=db.backref('questions', lazy=True))
 
 # Score Model
 class Score(db.Model):

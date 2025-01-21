@@ -32,5 +32,9 @@ quiz_master_23f2000606/
 
 ### Setup the database model
 
-### Connet Flask to SQLite db
+### Connect Flask to SQLite db
+
+### Make Routes and add admin_routes
+
+### Update App.py
 
