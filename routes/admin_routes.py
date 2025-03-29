@@ -1,39 +1,33 @@
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from models.models import User
-from models.models import Subject, Chapter, Quiz, Question
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
+
 from extension import db
-from werkzeug.security import generate_password_hash
-from werkzeug.security import check_password_hash
+from models.models import User, Subject, Chapter, Quiz, Question
 
 admin = Blueprint('admin', __name__)
 
+#####################################
+# Admin Auth / Login / Register
+#####################################
 
-# admin login route
 @admin.route('/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
-
-        # check if the user is admin
         admin_user = User.query.filter_by(username=username, is_admin=True).first()
 
         if admin_user and check_password_hash(admin_user.password, password):
-            # login susccessful
             session['admin_logged_in'] = True
             session['admin_name'] = admin_user.full_name
-            print("Session:", session)
             flash('Login Successful', 'success')
             return redirect(url_for('admin.dashboard'))
         else:
             flash('Invalid Credentials!', 'danger')
-        
     return render_template('admin/login.html')
 
 
-# Admin Register Route
 @admin.route('/register', methods=['GET', 'POST'])
 def admin_register():
     if request.method == 'POST':
@@ -41,7 +35,7 @@ def admin_register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         full_name = request.form['full_name']
-        dob_str = request.form['dob']  # DOB comes as a string from the form
+        dob_str = request.form['dob']
         qualification = request.form['qualification']
 
         # Check if passwords match
@@ -49,26 +43,24 @@ def admin_register():
             flash('Passwords do not match!', 'danger')
             return redirect(url_for('admin.admin_register'))
 
-        # Convert DOB string to Python date object
+        # Convert DOB
         try:
             dob = datetime.strptime(dob_str, "%Y-%m-%d").date()
         except ValueError:
             flash("Invalid date format! Please use YYYY-MM-DD.", "danger")
             return redirect(url_for('admin.admin_register'))
 
-        # Check if the username already exists
+        # Check username
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
             flash('Username already exists!', 'danger')
             return redirect(url_for('admin.admin_register'))
 
-        # Hash the password before storing
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
-        # Create a new admin user
         new_admin = User(
             username=username,
-            password=hashed_password,  # Store hashed password
+            password=hashed_password,
             is_admin=True,
             full_name=full_name,
             dob=dob,
@@ -83,22 +75,31 @@ def admin_register():
     return render_template('admin/register.html')
 
 
+@admin.route('/logout')
+def logout():
+    session.pop('admin_logged_in', None)
+    session.pop('admin_name', None)
+    flash("Logged out successfully!", "info")
+    return redirect(url_for('home'))
 
 
-
+#####################################
 # Admin Dashboard
+#####################################
+
 @admin.route('/dashboard')
 def dashboard():
+    """
+    Show some overall stats + the subjects/chapters overview.
+    """
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
 
-    # Fetch analytics data
     subjects_count = Subject.query.count()
     chapters_count = Chapter.query.count()
     quizzes_count = Quiz.query.count()
     questions_count = Question.query.count()
 
-    # Fetch all subjects and their related chapters
     subjects = Subject.query.all()
 
     return render_template(
@@ -110,32 +111,35 @@ def dashboard():
         subjects=subjects
     )
 
-# display subjects
+#####################################
+# Subjects
+#####################################
+
 @admin.route('/subjects', methods=['GET'])
 def subjects():
+    """
+    Just a separate page listing all subjects.
+    """
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
-    
-    subjects = Subject.query.all()  # Fetch subjects from database
+
+    subjects = Subject.query.all()
     return render_template('admin/subjects.html', subjects=subjects)
 
 
-# Add New Subject Route
 @admin.route('/add_subject', methods=['POST'])
 def add_subject():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
 
     subject_name = request.form.get('subject_name')
-    description = request.form.get('description')
+    description = request.form.get('description', '')
 
-    # Check if subject already exists
     existing_subject = Subject.query.filter_by(name=subject_name).first()
     if existing_subject:
         flash('Subject already exists!', 'danger')
         return redirect(url_for('admin.dashboard'))
 
-    # Create new subject
     new_subject = Subject(name=subject_name, description=description)
     db.session.add(new_subject)
     db.session.commit()
@@ -144,7 +148,6 @@ def add_subject():
     return redirect(url_for('admin.dashboard'))
 
 
-# Edit Subject Route
 @admin.route('/edit_subject/<int:subject_id>', methods=['POST'])
 def edit_subject(subject_id):
     if not session.get('admin_logged_in'):
@@ -153,21 +156,19 @@ def edit_subject(subject_id):
     subject = Subject.query.get_or_404(subject_id)
     subject.name = request.form['subject_name']
     subject.description = request.form['description']
-
     db.session.commit()
+
     flash('Subject updated successfully!', 'success')
     return redirect(url_for('admin.dashboard'))
 
 
-# Delete Subject Route
 @admin.route('/delete_subject/<int:subject_id>', methods=['POST'])
 def delete_subject(subject_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
 
     subject = Subject.query.get_or_404(subject_id)
-    
-    # Optional: Delete all related chapters before deleting subject
+    # Also remove chapters
     Chapter.query.filter_by(subject_id=subject_id).delete()
 
     db.session.delete(subject)
@@ -176,66 +177,112 @@ def delete_subject(subject_id):
     return redirect(url_for('admin.dashboard'))
 
 
+#####################################
+# Questions Management
+#####################################
 
-# # Admin subjects management route
-# @admin.route('/subjects', methods=['GET', 'POST'])
-# def manage_subjects():
-#     if not session.get('admin_logged_in'):
-#         return redirect(url_for('admin.admin_login'))
+@admin.route('/questions/<int:quiz_id>', methods=['GET', 'POST'])
+def manage_questions(quiz_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin.admin_login'))
 
-#     if request.method == 'POST':
-#         name = request.form['name']
-#         description = request.form['description']
+    # Fetch the quiz using the provided quiz_id
+    quiz = Quiz.query.get_or_404(quiz_id)
 
-#         # Create a new subject
-#         new_subject = Subject(name=name, description=description)
-#         db.session.add(new_subject)
-#         db.session.commit()
-#         flash("Subject added successfully!", "success")
+    if request.method == 'POST':
+        # Process the form data to add a new question
+        question_statement = request.form['question_statement']
+        option1 = request.form['option1']
+        option2 = request.form['option2']
+        option3 = request.form['option3']
+        option4 = request.form['option4']
+        correct_option = request.form['correct_option']
 
-#     # Fetch all subjects to display in the dashboard
-#     subjects = Subject.query.all()
-#     return render_template('admin/manage_subjects.html', subjects=subjects)
+        new_question = Question(
+            quiz_id=quiz.id,
+            question_statement=question_statement,
+            option1=option1,
+            option2=option2,
+            option3=option3,
+            option4=option4,
+            correct_option=correct_option
+        )
+        db.session.add(new_question)
+        db.session.commit()
+        flash('Question added successfully!', 'success')
+        return redirect(url_for('admin.manage_questions', quiz_id=quiz.id))
 
-
-# Admin logout route
-@admin.route('/logout')
-def logout():
-    session.pop('admin_logged_in', None)
-    flash("Logged out successfully!", "info")
-    return redirect(url_for('admin.admin_login'))
-
-# # Add Chapter Route
-# @admin.route('/chapters/<int:subject_id>', methods=['GET', 'POST'])
-# def manage_chapters(subject_id):
-#     if not session.get('admin_logged_in'):
-#         return redirect(url_for('admin.admin_login'))
-    
-#     # Fetch the subject
-#     subject = Subject.query.get_or_404(subject_id)
-#     if request.method == 'POST':
-#         name = request.form['name']
-#         description = request.form['description']
-
-#         # Create a new chapter under the subject
-#         new_chapter = Chapter(name=name, description=description, subject_id=subject.id)
-#         db.session.add(new_chapter)
-#         db.session.commit()
-#         flash("chapter added successfully!", "success")
-
-#     # Fetch all chapters of the subject to display in the dashboard
-#     chapters = Chapter.query.filter_by(subject_id=subject.id).all()
-#     return render_template('admin/manage_chapters.html', subject=subject, chapters=chapters)
+    # For GET request, fetch all questions for this quiz
+    questions = Question.query.filter_by(quiz_id=quiz.id).all()
+    return render_template('admin/manage_questions.html', quiz=quiz, questions=questions)
 
 
-# Add New Chapter
+@admin.route('/questions/edit/<int:question_id>', methods=['GET', 'POST'])
+def edit_question(question_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin.admin_login'))
+
+    # Fetch the question to edit
+    question = Question.query.get_or_404(question_id)
+
+    if request.method == 'POST':
+        # Update the question details with form data
+        question.question_statement = request.form['question_statement']
+        question.option1 = request.form['option1']
+        question.option2 = request.form['option2']
+        question.option3 = request.form['option3']
+        question.option4 = request.form['option4']
+        question.correct_option = request.form['correct_option']
+
+        db.session.commit()
+        flash("Question updated successfully!", "success")
+        return redirect(url_for('admin.manage_questions', quiz_id=question.quiz_id))
+
+    return render_template('admin/edit_question.html', question=question)
+
+
+@admin.route('/questions/delete/<int:question_id>', methods=['POST'])
+def delete_question(question_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin.admin_login'))
+
+    question = Question.query.get_or_404(question_id)
+    quiz_id = question.quiz_id  # store quiz id to redirect back
+    db.session.delete(question)
+    db.session.commit()
+    flash("Question deleted successfully!", "success")
+    return redirect(url_for('admin.manage_questions', quiz_id=quiz_id))
+
+#####################################
+# Chapters
+#####################################
+
+@admin.route('/get_chapters/<int:subject_id>')
+def get_chapters(subject_id):
+    """
+    Returns JSON list of chapters for the given subject.
+    Used by the front-end JS to populate the chapter dropdown.
+    """
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        return jsonify({"chapters": []})
+
+    chapters_data = [
+        {"id": c.id, "name": c.name} for c in subject.chapters
+    ]
+    return jsonify({"chapters": chapters_data})
+
+
 @admin.route('/add_chapter/<int:subject_id>', methods=['POST'])
 def add_chapter(subject_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
 
     chapter_name = request.form['chapter_name']
-    description = request.form['description']
+    description = request.form.get('description', '')
 
     new_chapter = Chapter(name=chapter_name, description=description, subject_id=subject_id)
     db.session.add(new_chapter)
@@ -245,7 +292,6 @@ def add_chapter(subject_id):
     return redirect(url_for('admin.dashboard'))
 
 
-# Edit Chapter
 @admin.route('/edit_chapter/<int:chapter_id>', methods=['POST'])
 def edit_chapter(chapter_id):
     if not session.get('admin_logged_in'):
@@ -254,14 +300,12 @@ def edit_chapter(chapter_id):
     chapter = Chapter.query.get_or_404(chapter_id)
     chapter.name = request.form['chapter_name']
     chapter.description = request.form['description']
-    
     db.session.commit()
 
     flash('Chapter updated successfully!', 'success')
     return redirect(url_for('admin.dashboard'))
 
 
-# Delete Chapter
 @admin.route('/delete_chapter/<int:chapter_id>', methods=['POST'])
 def delete_chapter(chapter_id):
     if not session.get('admin_logged_in'):
@@ -275,53 +319,82 @@ def delete_chapter(chapter_id):
     return redirect(url_for('admin.dashboard'))
 
 
-# Route to display quizzes
+#####################################
+# Quizzes
+#####################################
+
 @admin.route('/quizzes', methods=['GET'])
 def quizzes():
+    """
+    We will fetch all quizzes (and from each quiz we can access quiz.chapter, quiz.chapter.subject).
+    Then in the template we do the card-based layout.
+    """
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
-    
-    subjects = Subject.query.all()  # Assumes relationships are set up
-    return render_template('admin/quizzes.html', subjects=subjects)
+
+    # We also need all subjects for the <select> (Subject) in "Add Quiz" form
+    subjects = Subject.query.all()
+    # All quizzes
+    quizzes = Quiz.query.all()
+
+    return render_template('admin/quizzes.html', subjects=subjects, quizzes=quizzes)
 
 
-
-
-# Route to add a new quiz
 @admin.route('/quizzes/add/<int:chapter_id>', methods=['POST'])
 def add_quiz(chapter_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
 
     chapter = Chapter.query.get_or_404(chapter_id)
-    date_of_quiz = request.form['date_of_quiz']
+    date_str = request.form['date_of_quiz']   # e.g. "2025-03-01"
     time_duration = request.form['time_duration']
     remark = request.form['remark']
 
-    new_quiz = Quiz(chapter_id=chapter.id, date_of_quiz=date_of_quiz, time_duration=time_duration, remark=remark)
+    # Convert date_str into a real Python date object:
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Invalid date format! Please use YYYY-MM-DD.", "danger")
+        return redirect(url_for('admin.quizzes'))
+
+    new_quiz = Quiz(
+        chapter_id=chapter.id,
+        date_of_quiz=date_obj,  # pass the date object here
+        time_duration=time_duration,
+        remark=remark
+    )
     db.session.add(new_quiz)
     db.session.commit()
     flash('Quiz added successfully!', 'success')
     return redirect(url_for('admin.quizzes'))
 
 
-# Route to edit a quiz
 @admin.route('/quizzes/edit/<int:quiz_id>', methods=['POST'])
 def edit_quiz(quiz_id):
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
 
     quiz = Quiz.query.get_or_404(quiz_id)
-    quiz.date_of_quiz = request.form['date_of_quiz']
-    quiz.time_duration = request.form['time_duration']
-    quiz.remark = request.form['remark']
+
+    date_str = request.form['date_of_quiz']
+    time_duration = request.form['time_duration']
+    remark = request.form['remark']
+
+    try:
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Invalid date format! Please use YYYY-MM-DD.", "danger")
+        return redirect(url_for('admin.quizzes'))
+
+    quiz.date_of_quiz = date_obj
+    quiz.time_duration = time_duration
+    quiz.remark = remark
 
     db.session.commit()
     flash('Quiz updated successfully!', 'success')
     return redirect(url_for('admin.quizzes'))
 
 
-# Route to delete a quiz
 @admin.route('/quizzes/delete/<int:quiz_id>', methods=['POST'])
 def delete_quiz(quiz_id):
     if not session.get('admin_logged_in'):
@@ -334,129 +407,56 @@ def delete_quiz(quiz_id):
     return redirect(url_for('admin.quizzes'))
 
 
+#####################################
+# Summary
+#####################################
 @admin.route('/summary')
 def summary():
+    """
+    Summarize data in charts. For example:
+    - Subject-wise top scores
+    - Subject-wise user attempts
+    - (Any other interesting stats)
+    """
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin.admin_login'))
-    
-    return render_template('admin/summary.html')
 
+    # EXAMPLE: We'll create some placeholder lists for demonstration.
+    # In reality, you'd gather these from your Score or Quiz or Chapter models.
 
+    # Let's say we want to gather data for each Subject:
+    #   - 'attempts' = how many total attempts (across all quizzes in that subject)
+    #   - 'top_score' = the highest score for that subject
+    #   - 'avg_score' = the average score for that subject, etc.
 
-# # add routes for quiz management
-# @admin.route('/quizzes/<int:chapter_id>', methods=['GET', 'POST'])
-# def manage_quizzes(chapter_id):
-#     if not session.get('admin_logged_in'):
-#         return redirect(url_for('admin.admin_login'))
-    
-#     # fetch the chapter
-#     chapter = Chapter.query.get_or_404(chapter_id)
+    import random
 
-#     if request.method == 'POST':
-#         date_of_quiz_str = request.form['date_of_quiz']
-#         time_duration = request.form['time_duration']
-#         remark = request.form['remark']
+    subject_data = []
+    subjects = Subject.query.all()
 
-#         # Convert the date string to a Python date object
-#         try:
-#             date_of_quiz = datetime.strptime(date_of_quiz_str, '%Y-%m-%d').date()
-#         except ValueError:
-#             flash("Invalid date format. Please use YYYY-MM-DD.", "danger")
-#             return redirect(url_for('admin.manage_quizzes', chapter_id=chapter.id))
+    for sub in subjects:
+        # Hypothetically: 
+        # attempts = Score.query.join(Quiz).join(Chapter).filter(Chapter.subject_id == sub.id).count()
+        # top_score = ...
+        # For demonstration, let's just use random integers:
 
+        attempts = random.randint(10, 100)
+        top_score = random.randint(50, 100)
 
-#         # Create a new quiz under the chapter
-#         new_quiz = Quiz(
-#             chapter_id=chapter.id,
-#             date_of_quiz=date_of_quiz,
-#             time_duration=time_duration,
-#             remark=remark
-#         )
-#         db.session.add(new_quiz)
-#         db.session.commit()
-#         flash("Quiz added successfully!", "success")
+        subject_data.append({
+            'name': sub.name,
+            'attempts': attempts,
+            'top_score': top_score
+        })
 
-#     # Fetch all quizzes of the chapter to display in the dashboard
-#     quizzes = Quiz.query.filter_by(chapter_id=chapter.id).all()
-#     return render_template('admin/manage_quizzes.html', chapter=chapter, quizzes=quizzes)
+    # This subject_data is a list of dicts, e.g.:
+    # [
+    #   {"name": "Life", "attempts": 52, "top_score": 89},
+    #   {"name": "Love is Everything.", "attempts": 90, "top_score": 95},
+    #   ...
+    # ]
 
-
-# # Add routes for question management
-# @admin.route('/questions/<int:quiz_id>', methods=['GET', 'POST'])
-# def manage_questions(quiz_id):
-#     if not session.get('admin_logged_in'):
-#         return redirect(url_for('admin.admin_login'))
-
-#     # Fetch the quiz
-#     quiz = Quiz.query.get_or_404(quiz_id)
-
-#     if request.method == 'POST':
-#         question_statement = request.form['question_statement']
-#         option1 = request.form['option1']
-#         option2 = request.form['option2']
-#         option3 = request.form['option3']
-#         option4 = request.form['option4']
-#         correct_option = request.form['correct_option']
-
-#         # Create a new question under the quiz
-#         new_question = Question(
-#             quiz_id=quiz.id,
-#             question_statement=question_statement,
-#             option1=option1,
-#             option2=option2,
-#             option3=option3,
-#             option4=option4,
-#             correct_option=correct_option
-#         )
-#         db.session.add(new_question)
-#         db.session.commit()
-#         flash("Question added successfully!", "success")
-
-#     # Fetch all questions for this quiz
-#     questions = Question.query.filter_by(quiz_id=quiz.id).all()
-#     return render_template('admin/manage_questions.html', quiz=quiz, questions=questions)
-
-
-# # Edit Question Route
-# @admin.route('/questions/edit/<int:question_id>', methods=['GET', 'POST'])
-# def edit_question(question_id):
-#     if not session.get('admin_logged_in'):
-#         return redirect(url_for('admin.admin_login'))
-
-#     # Fetch the question to edit
-#     question = Question.query.get_or_404(question_id)
-
-#     if request.method == 'POST':
-#         # Update the question details
-#         question.question_statement = request.form['question_statement']
-#         question.option1 = request.form['option1']
-#         question.option2 = request.form['option2']
-#         question.option3 = request.form['option3']
-#         question.option4 = request.form['option4']
-#         question.correct_option = request.form['correct_option']
-#         db.session.commit()
-#         flash('Question updated successfully!', 'success')
-#         return redirect(url_for('admin.manage_questions', quiz_id=question.quiz_id))
-
-#     # Render the edit form with the existing question details
-#     return render_template('admin/edit_question.html', question=question)
-
-
-# # Delete Question Route
-# @admin.route('/questions/delete/<int:question_id>', methods=['POST'])
-# def delete_question(question_id):
-#     if not session.get('admin_logged_in'):
-#         return redirect(url_for('admin.admin_login'))
-
-#     # Fetch the question to delete
-#     question = Question.query.get_or_404(question_id)
-
-#     # Delete the question from the database
-#     db.session.delete(question)
-#     db.session.commit()
-#     flash('Question deleted successfully!', 'success')
-
-#     # Redirect back to the manage questions page for the same quiz
-#     return redirect(url_for('admin.manage_questions', quiz_id=question.quiz_id))
-
-
+    return render_template(
+        'admin/summary.html',
+        subject_data=subject_data
+    )

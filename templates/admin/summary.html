@@ -1,0 +1,153 @@
+{% extends "admin/base.html" %}
+{% block title %}Summary{% endblock %}
+
+{% block content %}
+<div style="
+  margin-left: 250px;
+  padding: 20px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #333;
+">
+
+  <!-- Hero/Heading Section -->
+  <div style="
+    background: linear-gradient(to right, #3498db, #2980b9);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    margin-bottom: 30px;
+  ">
+    <h2 style="margin-bottom: 10px; font-weight: 700; font-size: 1.8rem;">Summary (Placeholder)</h2>
+    <p style="margin-bottom: 0; opacity: 0.9;">Here you can see subject-wise stats, top scores, and user attempts.</p>
+  </div>
+
+  <!-- Chart Container -->
+  <div style="
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 30px;
+    align-items: flex-start;
+  ">
+    <!-- Card for Bar Chart -->
+    <div style="
+      flex: 1; 
+      min-width: 300px; 
+      background: white; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 20px;
+      border: none;
+    ">
+      <h4 style="
+        font-weight: 700; 
+        color: #2c3e50; 
+        margin-bottom: 10px; 
+        position: relative; 
+        padding-bottom: 8px;
+        border-bottom: 3px solid #3498db;
+        width: fit-content;
+      ">
+        Subject-wise Top Scores
+      </h4>
+      <canvas id="barChart" style="width:100%; height:500px;"></canvas>
+    </div>
+
+    <!-- Card for Doughnut Chart -->
+    <div style="
+    flex: 1; 
+    min-width: 300px; 
+    background: white; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 20px;
+    border: none;
+    ">
+    <h4 style="
+      font-weight: 700; 
+      color: #2c3e50; 
+      margin-bottom: 10px; 
+      position: relative; 
+      padding-bottom: 8px;
+      border-bottom: 3px solid #3498db;
+      width: fit-content;
+    ">
+      Subject-wise Attempts
+    </h4>
+
+    <!-- Key part: a container with a fixed height -->
+    <div style="position: relative; width: 100%; height: 500px;">
+      <canvas id="doughnutChart"></canvas>
+    </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include Chart.js (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Convert our subject_data from Python into JS
+// subject_data = [ { name: "...", attempts: x, top_score: y }, ... ]
+const subjectData = JSON.parse('{{ subject_data|tojson|safe }}');
+
+// Extract arrays for chart labels and data
+const labels = subjectData.map(item => item.name);
+const topScores = subjectData.map(item => item.top_score);
+const attempts = subjectData.map(item => item.attempts);
+
+// ===== BAR CHART for Top Scores =====
+const barCtx = document.getElementById('barChart').getContext('2d');
+const barChart = new Chart(barCtx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Top Score',
+      data: topScores,
+      backgroundColor: 'rgba(52, 152, 219, 0.8)', // a nice blue
+      borderColor: 'rgba(41, 128, 185, 1)',       // darker blue
+      borderWidth: 1
+    }]
+  },
+  options: {
+    scales: {
+      y: {
+        beginAtZero: true,
+        suggestedMax: 100 // or whatever your scale might be
+      }
+    }
+  }
+});
+
+// ===== DOUGHNUT CHART for Attempts =====
+const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+const doughnutChart = new Chart(doughnutCtx, {
+  type: 'doughnut',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Attempts',
+      data: attempts,
+      backgroundColor: [
+        '#3498db', 
+        '#1abc9c', 
+        '#9b59b6', 
+        '#e67e22', 
+        '#e74c3c',
+        '#34495e'
+      ],
+      hoverOffset: 10
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+  }
+});
+</script>
+{% endblock %}

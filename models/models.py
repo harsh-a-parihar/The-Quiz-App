@@ -1,43 +1,39 @@
 from extension import db
 
-
-# User Model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    is_admin=  db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)
     full_name = db.Column(db.String(100), nullable=False)
     dob = db.Column(db.Date, nullable=False)
     qualification = db.Column(db.String(100), nullable=False)
 
-
-# Subject Model
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    description = db.Column(db.Text, nullable=True) 
+    description = db.Column(db.Text)
 
-# Chapter Model
+    # chapters relationship
+    # subject.chapters is a list of Chapter objects
+
 class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    description = db.Column(db.Text)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
-    # Relationship with Subject
+
     subject = db.relationship('Subject', backref=db.backref('chapters', lazy=True))
 
-# Quiz Model
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
     date_of_quiz = db.Column(db.Date, nullable=False)
     time_duration = db.Column(db.String(5), nullable=False)
     remark = db.Column(db.String(100), nullable=False)
-    # Relationship with Chapter
+
     chapter = db.relationship('Chapter', backref=db.backref('quizzes', lazy=True))
 
-# Question Model
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False)
@@ -47,7 +43,7 @@ class Question(db.Model):
     option3 = db.Column(db.String(100), nullable=False)
     option4 = db.Column(db.String(100), nullable=False)
     correct_option = db.Column(db.String(100), nullable=False)
-    # Relationship with Quiz
+
     quiz = db.relationship('Quiz', backref=db.backref('questions', lazy=True))
 
 # Score Model

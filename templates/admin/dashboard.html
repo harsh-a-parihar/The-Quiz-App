@@ -21,7 +21,7 @@
         <!-- Subjects and Chapters -->
         <div class="container mt-4">
             <h2>Subjects Overview</h2>
-            <div class="row">
+            <div class="row g-4">
                 {% for subject in subjects %}
                 <div class="col-md-6">
                     <div class="card shadow-sm">
@@ -174,7 +174,7 @@
         </div>
 
         <!-- Floating Add Subject Button (Now opens the modal) -->
-        <div style="position: fixed; bottom: 20px; right: 20px;">
+        <div style="position: fixed; bottom: 30px; right: 30px;">
             <button 
                 style="display: flex; align-items: center; justify-content: center; 
                     background-color: #ff5733; color: white; border: none; 
@@ -184,7 +184,7 @@
                     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); overflow: hidden; 
                     white-space: nowrap;"
                 data-bs-toggle="modal" data-bs-target="#addSubjectModal"
-                onmouseover="this.style.width='180px'; this.style.padding='15px 20px'; 
+                onmouseover="this.style.width='180px'; this.style.padding='15px 15px'; 
                             this.style.justifyContent='start'; this.style.fontSize='15px'; 
                             document.getElementById('btn-text').style.opacity='1'; 
                             document.getElementById('btn-text').style.width='auto';"
