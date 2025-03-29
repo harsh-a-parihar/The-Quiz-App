@@ -1,0 +1,153 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div style="margin-left:250px; padding:20px;">
+  <h2 style="margin-bottom:20px;">Quizzes Management</h2>
+
+  <!-- Loop over Subjects ONCE -->
+  {% for subject in subjects %}
+    <div style="background:#fff9c4; border-radius:10px; padding:15px; margin-bottom:20px;">
+      <h3 style="color:#333; margin-bottom:10px;">{{ subject.name }}</h3>
+      
+      <!-- Loop over Chapters for this Subject -->
+      {% for chapter in subject.chapters %}
+        <div style="background:#ffffff; border:1px solid #ddd; border-radius:5px; padding:10px; margin-bottom:10px;">
+          <h4 style="margin-bottom:5px;">{{ chapter.name }}</h4>
+          
+          <!-- Table of Quizzes for this Chapter -->
+          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+            <thead>
+              <tr style="background:#f0f0f0;">
+                <th style="padding:5px;">Date</th>
+                <th style="padding:5px;">Duration</th>
+                <th style="padding:5px;">Remark</th>
+                <th style="padding:5px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for quiz in chapter.quizzes %}
+              <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:5px;">{{ quiz.date_of_quiz }}</td>
+                <td style="padding:5px;">{{ quiz.time_duration }}</td>
+                <td style="padding:5px;">{{ quiz.remark }}</td>
+                <td style="padding:5px;">
+                  <!-- Edit Quiz Modal Trigger -->
+                  <button style="background:#ffc107; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;" 
+                          data-bs-toggle="modal" data-bs-target="#editQuizModal{{ quiz.id }}">
+                    Edit
+                  </button>
+                  
+                  <!-- Delete Quiz Form -->
+                  <form method="POST" action="{{ url_for('admin.delete_quiz', quiz_id=quiz.id) }}" style="display:inline;">
+                    <button type="submit" style="background:#dc3545; border:none; padding:5px 10px; border-radius:3px; cursor:pointer; color:#fff;"
+                            onclick="return confirm('Delete this quiz?');">
+                      Delete
+                    </button>
+                  </form>
+                  
+                  <!-- Manage Questions -->
+                  <a href="{{ url_for('admin.manage_questions', quiz_id=quiz.id) }}" 
+                     style="background:#17a2b8; padding:5px 10px; border-radius:3px; color:#fff; text-decoration:none; margin-left:5px;">
+                    Questions
+                  </a>
+                </td>
+              </tr>
+              
+              <!-- Edit Quiz Modal -->
+              <div class="modal fade" id="editQuizModal{{ quiz.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content" style="border-radius:10px;">
+                    <div class="modal-header" style="background:#ffc107; color:#333;">
+                      <h5 class="modal-title">Edit Quiz</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('admin.edit_quiz', quiz_id=quiz.id) }}">
+                      <div class="modal-body">
+                        <label>Date:</label>
+                        <input type="date" name="date_of_quiz" style="width:100%; padding:5px; margin-bottom:10px;" value="{{ quiz.date_of_quiz }}" required>
+                        
+                        <label>Duration:</label>
+                        <input type="text" name="time_duration" style="width:100%; padding:5px; margin-bottom:10px;" value="{{ quiz.time_duration }}" required>
+                        
+                        <label>Remark:</label>
+                        <input type="text" name="remark" style="width:100%; padding:5px;" value="{{ quiz.remark }}">
+                      </div>
+                      <div class="modal-footer" style="background:#f8f9fa;">
+                        <button type="submit" style="background:#28a745; border:none; padding:5px 10px; border-radius:3px; color:white;">
+                          Save Changes
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </tbody>
+          </table>
+          
+          <!-- Add New Quiz Button -->
+          <button style="background:#007bff; color:#fff; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;" 
+                  data-bs-toggle="modal" data-bs-target="#addQuizModal{{ chapter.id }}">
+            + Add Quiz
+          </button>
+          
+          <!-- Add Quiz Modal -->
+          <div class="modal fade" id="addQuizModal{{ chapter.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#007bff; color:#fff;">
+                  <h5 class="modal-title">Add New Quiz</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('admin.add_quiz', chapter_id=chapter.id) }}">
+                  <div class="modal-body">
+                    <label>Date:</label>
+                    <input type="date" name="date_of_quiz" style="width:100%; padding:5px; margin-bottom:10px;" required>
+                    
+                    <label>Duration:</label>
+                    <input type="text" name="time_duration" style="width:100%; padding:5px; margin-bottom:10px;" required>
+                    
+                    <label>Remark:</label>
+                    <input type="text" name="remark" style="width:100%; padding:5px;">
+                  </div>
+                  <div class="modal-footer" style="background:#f8f9fa;">
+                    <button type="submit" style="background:#28a745; border:none; padding:5px 10px; border-radius:3px; color:white;">
+                      Add Quiz
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- (Optional) Edit Chapter Modal if you want to edit the chapter from here -->
+          <div class="modal fade" id="editChapterModal{{ chapter.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content" style="border-radius:10px;">
+                <div class="modal-header" style="background:#ffc107; color:#333;">
+                  <h5 class="modal-title">Edit Chapter</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('admin.edit_chapter', chapter_id=chapter.id) }}">
+                  <div class="modal-body">
+                    <label>Chapter Name:</label>
+                    <input type="text" name="chapter_name" style="width:100%; padding:5px; margin-bottom:10px;" value="{{ chapter.name }}" required>
+                    
+                    <label>Description:</label>
+                    <textarea name="description" style="width:100%; padding:5px;">{{ chapter.description }}</textarea>
+                  </div>
+                  <div class="modal-footer" style="background:#f8f9fa;">
+                    <button type="submit" style="background:#28a745; border:none; padding:5px 10px; border-radius:3px; color:white;">
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div> <!-- End Chapter Card -->
+      {% endfor %}
+    </div> <!-- End Subject Container -->
+  {% endfor %}
+</div>
+{% endblock %}
